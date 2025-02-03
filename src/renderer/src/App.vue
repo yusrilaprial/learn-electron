@@ -1,7 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import Versions from './components/Versions.vue'
 
+const message = ref('')
+
 const ipcHandle = () => window.electron.ipcRenderer.send('ping')
+window.electron.ipcRenderer.on('ping-reply', (_, data) => {
+  message.value = data
+})
+
+const loginTzuchi = () => window.electron.ipcRenderer.invoke('login-tzuchi')
+const logoutTzuchi = () => window.electron.ipcRenderer.invoke('logout-tzuchi')
 </script>
 
 <template>
@@ -14,12 +23,19 @@ const ipcHandle = () => window.electron.ipcRenderer.send('ping')
     <span class="ts">TypeScript</span>
   </div>
   <p class="tip">Please try pressing <code>F12</code> to open the devTool</p>
+  <p class="tip">{{ message }}</p>
   <div class="actions">
     <div class="action">
       <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">Documentation</a>
     </div>
     <div class="action">
       <a target="_blank" rel="noreferrer" @click="ipcHandle">Send IPC</a>
+    </div>
+    <div class="action">
+      <a target="_blank" rel="noreferrer" @click="loginTzuchi">Login Tzuchi</a>
+    </div>
+    <div class="action">
+      <a target="_blank" rel="noreferrer" @click="logoutTzuchi">Logout Tzuchi</a>
     </div>
   </div>
   <Versions />
