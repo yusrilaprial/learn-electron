@@ -3,6 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import puppeteer, { Browser, Page } from 'puppeteer'
+import { sendNotification } from './bot'
+import log from './log'
 
 function createWindow(): void {
   // Create the browser window.
@@ -90,13 +92,18 @@ app.whenReady().then(() => {
     tzuchiFirstPage = null
     await launchTzuchiBrowser()
   }
+  const handleLogMessage = (type: string, message: string) => {
+    console[type](message)
+    log[type](message)
+    sendNotification(message)
+  }
   ipcMain.handle('login-tzuchi', async () => {
     try {
       await launchTzuchiBrowser()
 
       await tzuchiFirstPage!.goto(URL + '/login')
       if (tzuchiFirstPage!.url() !== URL + '/login') {
-        console.log('Already Login Tzuchi')
+        handleLogMessage('info', 'Already Login Tzuchi')
         return
       }
 
@@ -107,23 +114,23 @@ app.whenReady().then(() => {
       await tzuchiFirstPage!.locator(selectorPassword).fill(PASSWORD)
       await tzuchiFirstPage!.locator(selectorSubmit).click()
       await tzuchiFirstPage!.waitForNavigation()
-      console.log('Login Tzuchi')
+
+      handleLogMessage('info', 'Login Tzuchi')
     } catch (error) {
+      handleLogMessage('error', JSON.stringify(error))
       await resetTzuchiBrowser()
-      throw error
     }
   })
-
   ipcMain.handle('logout-tzuchi', async () => {
     try {
       if (!tzuchiBrowser || !tzuchiFirstPage) {
-        console.log('Please Login Tzuchi First')
+        handleLogMessage('info', 'Please Login Tzuchi First')
         return
       }
 
       await tzuchiFirstPage!.goto(URL + '/superadmin')
       if (tzuchiFirstPage!.url() !== URL + '/superadmin') {
-        console.log('Already Logout Tzuchi')
+        handleLogMessage('info', 'Already Logout Tzuchi')
         return
       }
 
@@ -135,11 +142,11 @@ app.whenReady().then(() => {
 
       setTimeout(async () => {
         await closeTzuchiBrowser()
-        console.log('Logout Tzuchi')
+        handleLogMessage('info', 'Logout Tzuchi')
       }, 5000)
     } catch (error) {
+      handleLogMessage('error', (error as Error).stack ?? 'Error')
       await resetTzuchiBrowser()
-      throw error
     }
   })
 
